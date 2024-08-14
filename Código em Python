@@ -1,0 +1,146 @@
+import tkinter as tk
+import sqlite3
+from tkinter import messagebox
+
+# Criação do banco de dados ou conexão com um banco existente
+conn = sqlite3.connect("botijoes.db")
+cursor = conn.cursor()
+
+# Criação da tabela para controle de botijões
+cursor.execute("""
+    CREATE TABLE IF NOT EXISTS botijoes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        data DATE,
+        tipo TEXT,
+        preco_aquisicao REAL,
+        
+        vendido BOOLEAN
+    )
+""")
+conn.commit()
+
+#----------------------------------------------------------------
+
+# função para adicionar botijões com preço médio de aquisição
+def adicionar_botijoes():
+    try:
+        quantidade = int(entry_quantidade.get())
+        tipo = entry_tipo.get()
+        preco_aquisicao_total = float(entry_preco_aquisicao.get()) * quantidade
+
+        # Calcula o preço médio por botijão
+        preco_aquisicao_medio = preco_aquisicao_total / quantidade
+
+        # Insere os botijões no BD
+        for _ in range(quantidade):
+            cursor.execute("INSERT INTO botijoes (data, tipo, preco_aquisicao, vendido) VALUES (?, ?, ?, 0)",
+                           ("2024-07-29", tipo, preco_aquisicao_medio))
+        conn.commit()
+
+        messagebox.showinfo("Sucesso", f"{quantidade} botijões adicionados com sucesso!")
+        
+        # Limpa os campos de entrada após adicionar o registro
+        entry_quantidade.delete(0, tk.END)
+        entry_tipo.delete(0, tk.END)
+        entry_preco_aquisicao.delete(0, tk.END)
+        
+    except ValueError:
+        messagebox.showerror("Erro", "Insira valores válidos.")
+
+#------------------------------------------------------------------------------
+    
+# funcao para visualizar o estoque com preço médio
+#O preço médio de aquisição retornará o valor dos botijões em estoque somente, e não os já vendidos e removidos do banco de dados
+def visualizar_estoque():
+    cursor.execute("SELECT tipo, COUNT(*) AS quantidade, AVG(preco_aquisicao) AS preco_medio FROM botijoes WHERE vendido = 0 GROUP BY tipo")
+    estoque_info = cursor.fetchall()
+
+    if estoque_info:
+        info_text = "\n".join(f"{tipo}: {quantidade} botijões (Preço Médio de aquisição: R${preco_medio:.2f})" for tipo, quantidade, preco_medio in estoque_info)
+        messagebox.showinfo("Estoque", f"Estoque de Botijões:\n{info_text}")
+    else:
+        messagebox.showinfo("Estoque", "Nenhum botijão em estoque.")
+
+#------------------------------------------------------------------------------
+
+#Função para remover botijões por tipo
+def remover_botijoes_por_tipo():
+    try:
+        tipo = entry_tipo_remocao.get()
+        quantidade_remover = int(entry_quantidade_remocao.get())
+
+        # Seleciona os botijões do tipo especificado (mais antigos primeiro) para remoção
+        cursor.execute("SELECT id FROM botijoes WHERE tipo = ? AND vendido = 0 LIMIT ?", (tipo, quantidade_remover))
+        ids_remover = cursor.fetchall()
+
+        # Atualiza a quantidade em estoque (subtrai a quantidade a ser removida)
+        for botijao_id in ids_remover:
+            cursor.execute("UPDATE botijoes SET vendido = 1 WHERE id = ?", (botijao_id[0],))
+        conn.commit()
+        # Limpa os campos de entrada 
+        entry_tipo_remocao.delete(0, tk.END)
+        entry_quantidade_remocao.delete(0, tk.END)
+        
+        messagebox.showinfo("Remoção", f"{quantidade_remover} botijões do tipo '{tipo}' removidos do estoque.")
+    except ValueError:
+        messagebox.showerror("Erro", "Insira uma quantidade válida.")
+
+
+#------------------------------------------------------------------------------
+
+# Configuração da interface 
+root = tk.Tk()
+root.title("Controle de estoque de Botijões de Gás")
+root.geometry("800x500")  
+
+label_quantidade = tk.Label(root, text="Quantidade de Botijões:")
+entry_quantidade = tk.Entry(root)
+
+label_tipo = tk.Label(root, text="Tipo de Botijão:")
+entry_tipo = tk.Entry(root)
+
+label_preco_aquisicao = tk.Label(root, text="Preço de Aquisição:")
+entry_preco_aquisicao = tk.Entry(root)
+
+
+button_adicionar = tk.Button(root, text="Adicionar Botijões", command=adicionar_botijoes)
+
+button_visualizar_estoque = tk.Button(root, text="Visualizar Estoque Disponível", command=visualizar_estoque)
+
+
+label_tipo_remocao = tk.Label(root, text="Tipo de Botijão a Remover:")
+entry_tipo_remocao = tk.Entry(root)
+
+label_quantidade_remocao = tk.Label(root, text="Quantidade a Remover:")
+entry_quantidade_remocao = tk.Entry(root)
+
+button_remover_por_tipo = tk.Button(root, text="Remover Botijões por Tipo", command=remover_botijoes_por_tipo)
+#------------------------------------------------------------------------------
+
+# Posicionamento dos widgets
+label_quantidade.pack()
+entry_quantidade.pack()
+label_tipo.pack()
+entry_tipo.pack()
+label_preco_aquisicao.pack()
+entry_preco_aquisicao.pack()
+
+button_adicionar.pack()
+
+button_visualizar_estoque.pack()
+
+
+label_tipo_remocao.pack()
+entry_tipo_remocao.pack()
+label_quantidade_remocao.pack()
+entry_quantidade_remocao.pack()
+button_remover_por_tipo.pack()
+
+root.mainloop()
+
+#------------------------------------------------------------------------------
+
+# fechamento da conexão com o BD
+conn.close()
+
+#------------------------------------------------------------------------------
