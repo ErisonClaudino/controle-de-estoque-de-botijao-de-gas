@@ -28,7 +28,7 @@ def adicionar_botijoes():
         tipo = entry_tipo.get()
         preco_aquisicao_total = float(entry_preco_aquisicao.get()) * quantidade
 
-        # Calcula o preço médio por botijão
+        
         preco_aquisicao_medio = preco_aquisicao_total / quantidade
 
         # Insere os botijões no BD
@@ -117,7 +117,7 @@ entry_quantidade_remocao = tk.Entry(root)
 button_remover_por_tipo = tk.Button(root, text="Remover Botijões por Tipo", command=remover_botijoes_por_tipo)
 #------------------------------------------------------------------------------
 
-# Posicionamento dos widgets
+
 label_quantidade.pack()
 entry_quantidade.pack()
 label_tipo.pack()
