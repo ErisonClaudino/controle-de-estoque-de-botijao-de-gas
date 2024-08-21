@@ -31,7 +31,7 @@ def adicionar_botijoes():
         
         preco_aquisicao_medio = preco_aquisicao_total / quantidade
 
-        # Insere os botijões no BD
+        
         for _ in range(quantidade):
             cursor.execute("INSERT INTO botijoes (data, tipo, preco_aquisicao, vendido) VALUES (?, ?, ?, 0)",
                            ("2024-07-29", tipo, preco_aquisicao_medio))
@@ -39,7 +39,7 @@ def adicionar_botijoes():
 
         messagebox.showinfo("Sucesso", f"{quantidade} botijões adicionados com sucesso!")
         
-        # Limpa os campos de entrada após adicionar o registro
+        
         entry_quantidade.delete(0, tk.END)
         entry_tipo.delete(0, tk.END)
         entry_preco_aquisicao.delete(0, tk.END)
@@ -69,15 +69,15 @@ def remover_botijoes_por_tipo():
         tipo = entry_tipo_remocao.get()
         quantidade_remover = int(entry_quantidade_remocao.get())
 
-        # Seleciona os botijões do tipo especificado (mais antigos primeiro) para remoção
+        
         cursor.execute("SELECT id FROM botijoes WHERE tipo = ? AND vendido = 0 LIMIT ?", (tipo, quantidade_remover))
         ids_remover = cursor.fetchall()
 
-        # Atualiza a quantidade em estoque (subtrai a quantidade a ser removida)
+        
         for botijao_id in ids_remover:
             cursor.execute("UPDATE botijoes SET vendido = 1 WHERE id = ?", (botijao_id[0],))
         conn.commit()
-        # Limpa os campos de entrada 
+        
         entry_tipo_remocao.delete(0, tk.END)
         entry_quantidade_remocao.delete(0, tk.END)
         
